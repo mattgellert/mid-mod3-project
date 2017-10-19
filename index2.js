@@ -33,6 +33,11 @@ const allDaysLeap = [
   ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'],
   ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
 ]
+const moreButtonContainer = document.createElement('div')
+moreButtonContainer.className = 'more-button-container'
+const moreButton = document.createElement('button')
+moreButton.className = 'more-button'
+moreButton.innerText = 'See More!'
 
 let imagesURL = 'https://api.nasa.gov/planetary/apod?api_key=yAB0zruWx3MNSaoBNh9NIke4ycAwSGWtxTHQHOdX&date='
 let firstImageDate = new Date('1995-06-20')
@@ -43,6 +48,10 @@ let curr_year = today.toISOString().slice(0,4)
 dayInput.value = curr_day
 monthInput.value = curr_month
 yearInput.value = curr_year
+
+moreButton.addEventListener('click', () => {
+  fetchTenImages(urls)
+})
 
 Date.prototype.addDays = function(days) {
     let date = new Date(this.valueOf());
@@ -72,34 +81,49 @@ function fetchImages(url){
 let urls = []
 let imageCount = 0
 function fetchTenImages(urls){
+  moreButtonContainer.innerHTML = ''
   for (let i = 0; i < 10; i++) {
     fetchImages(urls[imageCount])
     imageCount++
   }
+  moreButtonContainer.appendChild(moreButton)
+  document.querySelector('.bottom').appendChild(moreButtonContainer)
+}
+
+function checkUrls(urls){
+  urls = urls.filter(url => {
+    let date = new Date(url.slice(-10))
+    return (date > firstImageDate && date < today)
+  })
+  return urls
 }
 
 
 searchForm.addEventListener('submit', function(ev) {
   ev.preventDefault();
   results.innerHTML = ''
-  let inputDay = dayInput.value
-  let inputMonth = monthInput.value
+  imageCount = 0
+  urls = []
+  let inputDay;
+  let inputMonth;
+  dayInput.value.length === 1 ? inputDay = '0' + dayInput.value : inputDay = dayInput.value
+  monthInput.value.length === 1 ? inputMonth = '0' + monthInput.value : inputMonth = monthInput.value
   let inputYear = yearInput.value
 
   if (!inputYear && inputMonth && inputDay) { //MONTH + DAY
     allYears.forEach(year => {
-      urls.push(`${imagesURL + year}-${inputMonth}-${inputDay}`)
-      // fetchImages(`${imagesURL + year}-${inputMonth}-${inputDay}`)
+      if (year % 4 !== 0 && inputMonth === '02' && inputDay === '29') {
+        // do nothing
+      } else {
+        urls.push(`${imagesURL + year}-${inputMonth}-${inputDay}`)
+      }
     })
-    fetchTenImages(urls)
   } else if (!inputYear && !inputMonth && inputDay) { //DAY
     allYears.forEach(year => {
       allMonths.forEach(month => {
         urls.push(`${imagesURL + year}-${month}-${inputDay}`)
-        // fetchImages(`${imagesURL + year}-${month}-${inputDay}`)
       })
     })
-    fetchTenImages(urls)
   } else if (!inputYear && inputMonth && !inputDay) { //MONTH
     allYears.forEach(year => {
       if (year % 4 === 0){
@@ -114,7 +138,6 @@ searchForm.addEventListener('submit', function(ev) {
         })
       }
     })
-    fetchTenImages(urls)
   } else if (inputYear && !inputMonth && !inputDay) { //YEAR
       let start = new Date(`${inputYear}-01-01`)
       let end = new Date(`${inputYear}-12-31`)
@@ -123,30 +146,36 @@ searchForm.addEventListener('submit', function(ev) {
         urls.push(imagesURL + date)
         // fetchImages(imagesURL + date)
       })
-      fetchTenImages(urls)
-  } else if (inputYear && !inputMonth && inputDay){ // DAY + YEAR // NOT DONE BITCHES
+
+  } else if (inputYear && !inputMonth && inputDay){ // DAY + YEAR
+    let thisMonth;
     if (inputYear % 4 === 0){
-      allDaysLeap.forEach((month, i) => {
-        urls.push(`${imagesURL + inputYear}-${i + 1}-${inputDay}`)
+      allDaysLeap.forEach(function(month, i) {
+        i < 9 ? thisMonth = '0' + (i + 1) : thisMonth = (i + 1)
+        urls.push(`${imagesURL + inputYear}-${thisMonth}-${inputDay}`)
       })
+
     } else {
-      allDaysNormal.forEach(month => {
-        urls.push(`${imagesURL + inputYear}-${i + 1}-${inputDay}`)
+      allDaysNormal.forEach(function(month, i) {
+        i < 9 ? thisMonth = '0' + (i + 1) : thisMonth = (i + 1)
+        urls.push(`${imagesURL + inputYear}-${thisMonth}-${inputDay}`)
       })
+
     }
   } else { //MONTH + DAY + YEAR
     let url = imagesURL + yearInput.value + '-' + monthInput.value + '-' + dayInput.value
-    fetchImages(url)
+    return fetchImages(url)
   }
+  urls = checkUrls(urls)
+  fetchTenImages(urls)
 });
 
-//started at June 20, 1995 (ends today)
 function imageRender(json){
   let div = document.createElement('div')
   div.innerHTML =
-    `<h2>${json.title} - ${json.date}</h2>
+    `<h2>${json.title} ${json.date}</h2>
     <figure>
-      <img src=${json.url} height="500px">
+      <img src=${json.url} width="80%">
       <figcaption>Courtesy of: ${json.copyright}</figcaption>
     </figure>
     <p>${json.explanation}</p>`
