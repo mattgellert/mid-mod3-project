@@ -1,0 +1,29 @@
+.image-flexbox-container {
+  display: flex;
+  flex-direction: row;
+}
+.image-prev {
+  flex: 1;
+}
+.image-center {
+  flex: 1;
+}
+.image-next {
+  flex: 1;
+}
+.image-results div {
+  padding: 10px;
+  background-color: #e8eef7;
+  /*border: 1px solid #a8abaf;*/
+  box-shadow: 10px 10px 5px #888888;
+}
+.image-results h2 {
+  text-align: center;
+}
+.image-results figure {
+  text-align: center;
+  color: #a8abaf;
+}
+.image-results p {
+  text-align: center;
+}

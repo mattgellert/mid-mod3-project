@@ -2,7 +2,9 @@ const searchForm = document.getElementById('image-search-form')
 const dayInput = document.getElementById('image-search-box-day')
 const monthInput = document.getElementById('image-search-box-month')
 const yearInput = document.getElementById('image-search-box-year')
-const results = document.querySelector('.image-results')
+const centerImageDiv = document.querySelector('.image-center')
+const nextImageDiv = document.querySelector('.image-next')
+const prevImageDiv = document.querySelector('.image-prev')
 const allYears = [1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
 const allMonths = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 const allDaysNormal = [
@@ -40,55 +42,23 @@ let today = new Date((new Date()).toLocaleDateString())
 let curr_day = today.toISOString().slice(8,10)
 let curr_month = today.toISOString().slice(5,7)
 let curr_year = today.toISOString().slice(0,4)
+let searchWasJustSubmitted = false
+
 dayInput.value = curr_day
 monthInput.value = curr_month
 yearInput.value = curr_year
 
-
-
-
 let urls = []
-let imageCount = 0
-let nextTenUrls = []
-
-function fetchTenImages(urls){
-  for (let i = 0; i < 10; i++) {
-    nextTenUrls.push(urls[imageCount])
-    imageCount++
-  }
-}
-
-function fetchImage(url){
-  fetch(url)
-    .then(res => res.json())
-    .then(json => imageRender(json));
-}
-
-function imageRender(json){
-  let div = document.createElement('div')
-  div.innerHTML =
-    `<h2>${json.title} ${json.date}</h2>
-    <figure>
-      <img src=${json.url} width="80%">
-      <figcaption>Courtesy of: ${json.copyright}</figcaption>
-    </figure>
-    <p>${json.explanation}</p>`
-  results.appendChild(div);
-}
-
-function checkUrls(urls){
-  urls = urls.filter(url => {
-    let date = new Date(url.slice(-10))
-    return (date > firstImageDate && date < today)
-  })
-  return urls
-}
 
 searchForm.addEventListener('submit', function(ev) {
   ev.preventDefault();
-  results.innerHTML = ''
+
+  // results.innerHTML = ''
+
   imageCount = 0
+  imageIndex = 0
   urls = []
+
   let inputDay;
   let inputMonth;
   dayInput.value.length === 1 ? inputDay = '0' + dayInput.value : inputDay = dayInput.value
@@ -145,11 +115,111 @@ searchForm.addEventListener('submit', function(ev) {
 
     }
   } else { //MONTH + DAY + YEAR
-    urls.push(`${imagesURL + yearInput.value}-${monthInput.value }-${dayInput.value}`)
+    let url = checkUrls([`${imagesURL + yearInput.value}-${monthInput.value }-${dayInput.value}`])[0]
+    renderCenterImage(url)
   }
   urls = checkUrls(urls)
-  fetchTenImages(urls)
+  prepTenImages(urls)
+  searchWasJustSubmitted = true
 });
+
+// nextButton.addEventListener('click', () => {
+//   searchWasJustSubmitted = false
+//   renderPrevImage(currentImages[imageIndex])
+//   renderCenterImage(currentImages[imageIndex + 1])
+//   renderNextImage(currentImages[imageIndex + 2])
+//   imageIndex++
+//
+// })
+
+// prevButton.addEventListener('click', () => {
+//   renderNextImage(currentImages[imageIndex])
+//   renderCenterImage(currentImages[imageIndex - 1])
+//   renderPrevImage(currentImages[imageIndex - 2])
+//   imageIndex--
+// })
+
+function renderPrevImage(json) {
+  const div = document.createElement('div')
+  div.innerHTML =`<img src=${json.url} width="80%">`
+    // `<h2>${json.title} ${json.date}</h2>
+    // <figure>
+      // <img src=${json.url} width="80%">
+    //   <figcaption>Courtesy of: ${json.copyright}</figcaption>
+    // </figure>
+    // <p>${json.explanation}</p>`
+  prevImageDiv.appendChild(div);
+}
+
+function renderCenterImage(json) {
+    const div = document.createElement('div')
+    div.innerHTML = `<img src=${json.url} width="80%">`
+      // `<h2>${json.title} ${json.date}</h2>
+      // <figure>
+      //   <img src=${json.url} width="80%">
+      //   <figcaption>Courtesy of: ${json.copyright}</figcaption>
+      // </figure>
+      // <p>${json.explanation}</p>`
+    centerImageDiv.appendChild(div);
+}
+
+function renderNextImage(json) {
+  const div = document.createElement('div')
+  div.innerHTML = `<img src=${json.url} width="80%">`
+    // `<h2>${json.title} ${json.date}</h2>
+    // <figure>
+    //   <img src=${json.url} width="80%">
+    //   <figcaption>Courtesy of: ${json.copyright}</figcaption>
+    // </figure>
+    // <p>${json.explanation}</p>`
+  nextImageDiv.appendChild(div);
+}
+
+let imageCount = 0
+let imageIndex = 0
+let currentImages = []
+let nextTenImagesData = []
+
+
+function prepTenImages(urls){
+  urls.slice(imageCount, imageCount+10).forEach(url => {fetchImage(url)})
+  imageCount += 10
+}
+
+function fetchImage(url){
+  fetch(url)
+    .then(res => res.json())
+    .then(json => {getImage(json)});
+}
+
+function getImage(json){
+  currentImages.push(json)
+  if (searchWasJustSubmitted && currentImages.length === 10) {
+    renderCenterImage(currentImages[imageIndex])
+    renderNextImage(currentImages[imageIndex + 1])
+    renderPrevImage(currentImages[imageIndex + 2]) // remove later
+  }
+}
+
+// function imageRender(json){
+//   const div = document.createElement('div')
+//   div.innerHTML =
+//     `<h2>${json.title} ${json.date}</h2>
+//     <figure>
+//       <img src=${json.url} width="80%">
+//       <figcaption>Courtesy of: ${json.copyright}</figcaption>
+//     </figure>
+//     <p>${json.explanation}</p>`
+//   results.appendChild(div);
+// }
+
+function checkUrls(urls){
+  urls = urls.filter(url => {
+    const date = new Date(url.slice(-10))
+    return (date > firstImageDate && date < today)
+  })
+  return urls
+}
 
 
 Date.prototype.addDays = function(days) {
