@@ -33,11 +33,6 @@ const allDaysLeap = [
   ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'],
   ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
 ]
-const moreButtonContainer = document.createElement('div')
-moreButtonContainer.className = 'more-button-container'
-const moreButton = document.createElement('button')
-moreButton.className = 'more-button'
-moreButton.innerText = 'See More!'
 
 let imagesURL = 'https://api.nasa.gov/planetary/apod?api_key=yAB0zruWx3MNSaoBNh9NIke4ycAwSGWtxTHQHOdX&date='
 let firstImageDate = new Date('1995-06-20')
@@ -49,45 +44,36 @@ dayInput.value = curr_day
 monthInput.value = curr_month
 yearInput.value = curr_year
 
-moreButton.addEventListener('click', () => {
-  fetchTenImages(urls)
-})
 
-Date.prototype.addDays = function(days) {
-    let date = new Date(this.valueOf());
-    date.setDate(date.getDate() + days);
-    return date;
-}
 
-function getDates(startDate, stopDate) {
-    let dateArray = new Array();
-    let currentDate = startDate;
-    while (currentDate <= stopDate) {
-        let newDate = new Date(currentDate)
-        let newDateFormatted = newDate.toISOString().slice(0,10)
-        dateArray.push(newDateFormatted);
-        currentDate = currentDate.addDays(1);
-    }
-    return dateArray;
-}
-
-function fetchImages(url){
-  // fetch(imagesURL + yearInput.value + '-' + monthInput.value + '-' + dayInput.value)
-  fetch(url)
-    .then(res => res.json())
-    .then(json => {imageRender(json)}); // COME BACK TO THIS MOFO
-}
 
 let urls = []
 let imageCount = 0
+let nextTenUrls = []
+
 function fetchTenImages(urls){
-  moreButtonContainer.innerHTML = ''
   for (let i = 0; i < 10; i++) {
-    fetchImages(urls[imageCount])
+    nextTenUrls.push(urls[imageCount])
     imageCount++
   }
-  moreButtonContainer.appendChild(moreButton)
-  document.querySelector('.bottom').appendChild(moreButtonContainer)
+}
+
+function fetchImage(url){
+  fetch(url)
+    .then(res => res.json())
+    .then(json => imageRender(json));
+}
+
+function imageRender(json){
+  let div = document.createElement('div')
+  div.innerHTML =
+    `<h2>${json.title} ${json.date}</h2>
+    <figure>
+      <img src=${json.url} width="80%">
+      <figcaption>Courtesy of: ${json.copyright}</figcaption>
+    </figure>
+    <p>${json.explanation}</p>`
+  results.appendChild(div);
 }
 
 function checkUrls(urls){
@@ -97,7 +83,6 @@ function checkUrls(urls){
   })
   return urls
 }
-
 
 searchForm.addEventListener('submit', function(ev) {
   ev.preventDefault();
@@ -129,12 +114,10 @@ searchForm.addEventListener('submit', function(ev) {
       if (year % 4 === 0){
         allDaysLeap[parseInt(inputMonth) - 1].forEach(day => {
           urls.push(`${imagesURL + year}-${inputMonth}-${day}`)
-          // fetchImages(`${imagesURL + year}-${inputMonth}-${day}`)
         })
       } else {
         allDaysNormal[parseInt(inputMonth) - 1].forEach(day => {
           urls.push(`${imagesURL + year}-${inputMonth}-${day}`)
-          // fetchImages(`${imagesURL + year}-${inputMonth}-${day}`)
         })
       }
     })
@@ -144,7 +127,6 @@ searchForm.addEventListener('submit', function(ev) {
       let dates = getDates(start, end)
       dates.forEach(date => {
         urls.push(imagesURL + date)
-        // fetchImages(imagesURL + date)
       })
 
   } else if (inputYear && !inputMonth && inputDay){ // DAY + YEAR
@@ -163,21 +145,27 @@ searchForm.addEventListener('submit', function(ev) {
 
     }
   } else { //MONTH + DAY + YEAR
-    let url = imagesURL + yearInput.value + '-' + monthInput.value + '-' + dayInput.value
-    return fetchImages(url)
+    urls.push(`${imagesURL + yearInput.value}-${monthInput.value }-${dayInput.value}`)
   }
   urls = checkUrls(urls)
   fetchTenImages(urls)
 });
 
-function imageRender(json){
-  let div = document.createElement('div')
-  div.innerHTML =
-    `<h2>${json.title} ${json.date}</h2>
-    <figure>
-      <img src=${json.url} width="80%">
-      <figcaption>Courtesy of: ${json.copyright}</figcaption>
-    </figure>
-    <p>${json.explanation}</p>`
-  results.appendChild(div);
+
+Date.prototype.addDays = function(days) {
+    let date = new Date(this.valueOf());
+    date.setDate(date.getDate() + days);
+    return date;
+}
+
+function getDates(startDate, stopDate) {
+    let dateArray = new Array();
+    let currentDate = startDate;
+    while (currentDate <= stopDate) {
+        let newDate = new Date(currentDate)
+        let newDateFormatted = newDate.toISOString().slice(0,10)
+        dateArray.push(newDateFormatted);
+        currentDate = currentDate.addDays(1);
+    }
+    return dateArray;
 }
